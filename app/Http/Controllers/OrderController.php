@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Order;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class OrderController extends Controller
 {
@@ -27,7 +28,12 @@ class OrderController extends Controller
     public function create()
     {
         $order = new Order();
-        return view('order.create', compact('order'));
+        if (Auth::check()) {
+            $order->id_creator = Auth::id();
+            return view('order.create', compact('order'));
+        }
+        //$request->session()->flash('status', 'Пожалуйста, войдите в свой аккаунт!');
+        return redirect()->route('orders.index');
     }
 
     /**
@@ -38,20 +44,23 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
-        // Проверка введённых данных
-        // Если будут ошибки, то возникнет исключение
-        // Иначе возвращаются данные формы
-        $data = $this->validate($request, [
-            'name' => 'required|min:9',
-            'products' => 'required|min:10',
-        ]);
+        if (Auth::check()) {
+            // Проверка введённых данных
+            // Если будут ошибки, то возникнет исключение
+            // Иначе возвращаются данные формы
+            $data = $this->validate($request, [
+                'name' => 'required|min:6',
+                'products' => 'required|min:10',
+                'address' => 'required|min:6',
+                'city' => 'required|min:3',
+            ]);
 
-        $order = new Order();
-        // Заполнение статьи данными из формы
-        $order->fill($data);
-        // При ошибках сохранения возникнет исключение
-        $order->save();
-
+            $order = new Order();
+            // Заполнение статьи данными из формы
+            $order->fill($data);
+            // При ошибках сохранения возникнет исключение
+            $order->save();
+        }
         // Редирект на указанный маршрут с добавлением флеш-сообщения
         return redirect()->route('orders.index');
     }
@@ -76,7 +85,10 @@ class OrderController extends Controller
      */
     public function edit(Order $order)
     {
-        return view('order.edit', compact('order'));
+        if (Auth::check() && (Auth::id() == $order->id_creator)) {
+            return view('order.edit', compact('order'));
+        }
+        return redirect()->route('orders.index');
     }
 
     /**
@@ -88,15 +100,19 @@ class OrderController extends Controller
      */
     public function update(Request $request, Order $order)
     {
-        $data = $this->validate($request, [
-            // У обновления немного изменённая валидация. В проверку уникальности добавляется название поля и id текущего объекта
-            // Если этого не сделать, Laravel будет ругаться на то что имя уже существует
-            'name' => 'required|unique:orders,name,' . $order->id,
-            'products' => 'required|min:10',
-        ]);
+        (Auth::check() && (Auth::id() == $order->id_creator)){
+            $data = $this->validate($request, [
+                // У обновления немного изменённая валидация. В проверку уникальности добавляется название поля и id текущего объекта
+                // Если этого не сделать, Laravel будет ругаться на то что имя уже существует
+                'name' => 'required|unique:orders,name,' . $order->id,
+                'products' => 'required|min:10',
+                'address' => 'required|min:6',
+                'city' => 'required|min:3',
+            ]);
 
-        $order->fill($data);
-        $order->save();
+            $order->fill($data);
+            $order->save();
+        }
         return redirect()->route('orders.index');
     }
 
@@ -109,8 +125,10 @@ class OrderController extends Controller
     public function destroy(Order $order)
     {
         // DELETE — идемпотентный метод, поэтому результат операции всегда один и тот же
-        if ($order) {
-            $order->delete();
+        (Auth::check() && (Auth::id() == $order->id_creator)){
+            if ($order) {
+                $order->delete();
+            }
         }
         return redirect()->route('orders.index');
     }

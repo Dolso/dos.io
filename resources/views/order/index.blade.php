@@ -3,8 +3,9 @@
 @extends('layouts.app')
 
 <!-- Секция, содержимое которой обычный текст. -->
-
-
+@if (Session::has('status'))
+	{{ Session::get('status') }}
+@endif
 <!-- Секция, содержащая HTML блок. Имеет открывающую и закрывающую часть. -->
 @section('content')
     <h1>Список заказов</h1>
