@@ -15,8 +15,8 @@ class OrderController extends Controller
      */
     public function index()
     {
-        $orders = Order::paginate();
-
+        $orders = Order::where('status', 0)->get();
+        
         return view('order.index', compact('orders'));
     }
 
@@ -27,9 +27,9 @@ class OrderController extends Controller
      */
     public function create()
     {
-        $order = new Order();
+    	//$this->authorize('create', Order::class);        
         if (Auth::check()) {
-            $order->id_creator = Auth::id();
+        	$order = new Order();
             return view('order.create', compact('order'));
         }
         //$request->session()->flash('status', 'Пожалуйста, войдите в свой аккаунт!');
@@ -58,6 +58,7 @@ class OrderController extends Controller
             $order = new Order();
             // Заполнение статьи данными из формы
             $order->fill($data);
+            $order->id_creator = Auth::id();
             // При ошибках сохранения возникнет исключение
             $order->save();
         }
@@ -74,7 +75,11 @@ class OrderController extends Controller
     public function show(Order $order)
     {
         //$order = Order::findOrFail($order);
-        return view('order.show', compact('order'));
+        $is_this_creator = 0;
+        if (Auth::id() == $order->id_creator) {
+        	$is_this_creator = 1;
+        }
+        return view('order.show', compact('order', 'is_this_creator'));
     }
 
     /**
@@ -100,7 +105,7 @@ class OrderController extends Controller
      */
     public function update(Request $request, Order $order)
     {
-        (Auth::check() && (Auth::id() == $order->id_creator)){
+        if (Auth::check() && (Auth::id() == $order->id_creator)){
             $data = $this->validate($request, [
                 // У обновления немного изменённая валидация. В проверку уникальности добавляется название поля и id текущего объекта
                 // Если этого не сделать, Laravel будет ругаться на то что имя уже существует
@@ -125,11 +130,11 @@ class OrderController extends Controller
     public function destroy(Order $order)
     {
         // DELETE — идемпотентный метод, поэтому результат операции всегда один и тот же
-        (Auth::check() && (Auth::id() == $order->id_creator)){
+        //if (Auth::check() && (Auth::id() == $order->id_creator)){
             if ($order) {
                 $order->delete();
             }
-        }
+        //}
         return redirect()->route('orders.index');
     }
 }

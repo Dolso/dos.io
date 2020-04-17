@@ -16,12 +16,12 @@ class CreateOrdersTable extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
-            $table->string('city', 100);
-            $table->integer('id_creator');
+            $table->string('city', 100)->nullable();
+            $table->integer('id_creator')->nullable();
             $table->integer('id_accepted')->nullable();
-            $table->string('name', 100);
-            $table->string('address', 200);
-            $table->text('products');
+            $table->string('name', 100)->nullable();
+            $table->string('address', 200)->nullable();
+            $table->text('products')->nullable();
             $table->tinyInteger('status')->default(0); // 0 - не принят, 1 - принят, 2 - выполнен
         });
     }
