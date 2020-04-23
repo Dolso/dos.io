@@ -27,13 +27,13 @@ class OrderController extends Controller
      */
     public function create()
     {
-    	//$this->authorize('create', Order::class);        
-        if (Auth::check()) {
+    	$this->authorize('create', Order::class);        
+        //if (Auth::check()) {
         	$order = new Order();
             return view('order.create', compact('order'));
-        }
+        //}
         //$request->session()->flash('status', 'Пожалуйста, войдите в свой аккаунт!');
-        return redirect()->route('orders.index');
+        //return redirect()->route('orders.index');
     }
 
     /**
@@ -44,7 +44,8 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
-        if (Auth::check()) {
+        $this->authorize('create', Order::class);
+        //if (Auth::check()) {
             // Проверка введённых данных
             // Если будут ошибки, то возникнет исключение
             // Иначе возвращаются данные формы
@@ -61,7 +62,7 @@ class OrderController extends Controller
             $order->id_creator = Auth::id();
             // При ошибках сохранения возникнет исключение
             $order->save();
-        }
+        //}
         // Редирект на указанный маршрут с добавлением флеш-сообщения
         return redirect()->route('orders.index');
     }
@@ -90,10 +91,11 @@ class OrderController extends Controller
      */
     public function edit(Order $order)
     {
-        if (Auth::check() && (Auth::id() == $order->id_creator)) {
+        $this->authorize('update', $order);
+        //if (Auth::check() && (Auth::id() == $order->id_creator)) {
             return view('order.edit', compact('order'));
-        }
-        return redirect()->route('orders.index');
+        //}
+        //return redirect()->route('orders.index');
     }
 
     /**
@@ -105,7 +107,15 @@ class OrderController extends Controller
      */
     public function update(Request $request, Order $order)
     {
-        if (Auth::check() && (Auth::id() == $order->id_creator)){
+        $this->authorize('viewAny', Order::class);
+        if ($request->status == 'принимаю') {
+            $order->status = 1;
+            $order->id_accepted = Auth::id();
+            $order->save();
+            return redirect()->route('orders.index');
+        }
+        $this->authorize('update', $order);
+        //if (Auth::check() && (Auth::id() == $order->id_creator)){
             $data = $this->validate($request, [
                 // У обновления немного изменённая валидация. В проверку уникальности добавляется название поля и id текущего объекта
                 // Если этого не сделать, Laravel будет ругаться на то что имя уже существует
@@ -117,7 +127,7 @@ class OrderController extends Controller
 
             $order->fill($data);
             $order->save();
-        }
+        //}
         return redirect()->route('orders.index');
     }
 
@@ -130,6 +140,7 @@ class OrderController extends Controller
     public function destroy(Order $order)
     {
         // DELETE — идемпотентный метод, поэтому результат операции всегда один и тот же
+        $this->authorize('delete', $order);
         //if (Auth::check() && (Auth::id() == $order->id_creator)){
             if ($order) {
                 $order->delete();

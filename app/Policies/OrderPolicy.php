@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Order;
 use App\User;
+use App\Rights;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class OrderPolicy
@@ -18,7 +19,10 @@ class OrderPolicy
      */
     public function viewAny(User $user)
     {
-        //
+        if (Rights::where('rights', 'accepted')->where('id_user', $user->id)->count() != 0) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -30,7 +34,10 @@ class OrderPolicy
      */
     public function view(User $user, Order $order)
     {
-        //
+        if (($user->id == $order->id_creator) OR (Rights::where('rights', 'accepted')->where('id_user', $user->id)->count() != 0)) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -41,12 +48,7 @@ class OrderPolicy
      */
     public function create(User $user)
     {
-        //
-        /*return in_array($user->email, [
-            'omnogom24@yandex.ru',
-        ]); */
-
-        
+        return $user != null;
     }
 
     /**
@@ -58,7 +60,11 @@ class OrderPolicy
      */
     public function update(User $user, Order $order)
     {
-        //
+    	$is_this_creator = false;
+        if ($user->id == $order->id_creator) {
+            $is_this_creator = true;
+        }
+        return $is_this_creator;
     }
 
     /**
@@ -70,7 +76,11 @@ class OrderPolicy
      */
     public function delete(User $user, Order $order)
     {
-        //
+        $is_this_creator = false;
+        if ($user->id == $order->id_creator) {
+            $is_this_creator = true;
+        }
+        return $is_this_creator;
     }
 
     /**
